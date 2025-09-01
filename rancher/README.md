@@ -6,15 +6,43 @@ Instalação automatizada do Rancher em VM usando Docker ou Terraform.
 
 ## 🚀 Instalação
 
+### 🐳 **Docker**
+
 ```bash
-# Escolher método de instalação:
-cd docker && ./install.sh      # Desenvolvimento/Testes
-cd terraform && ./install.sh   # Produção Simples
+cd docker/
+./install.sh
+```
+
+### 🏗️ **Terraform**
+
+```bash
+cd terraform/
+./install.sh
+```
+
+```bash
+# Personalização
+cp terraform.tfvars.example terraform.tfvars
+
+# Gerenciamento
+terraform plan
+terraform apply
+terraform destroy
+
+# Comandos docker
+ssh $SSH_USER@$VM_HOST 'cd /opt/rancher && docker-compose ps'
+ssh $SSH_USER@$VM_HOST 'cd /opt/rancher && docker-compose logs -f'
+ssh $SSH_USER@$VM_HOST 'cd /opt/rancher && docker-compose restart'
+ssh $SSH_USER@$VM_HOST 'cd /opt/rancher && docker-compose down'
+
+# Reset completo
+terraform destroy -auto-approve
+terraform apply -auto-approve
 ```
 
 ## 🔑 Acesso Padrão
 
-- **URL**: http://rancher.home
+- **URL**: http://$VM_HOST
 - **Usuário**: admin
 - **Senha**: $BOOTSTRAP_PASSWORD (padrão: admin123)
 
@@ -66,7 +94,7 @@ ssh $SSH_USER@$VM_HOST 'cd /opt/rancher && docker-compose restart'
 ssh $SSH_USER@$VM_HOST 'cd /opt/rancher && docker-compose pull && docker-compose up -d'
 ```
 
-## 🔍 Troubleshooting Rancher
+## 🆘 Troubleshooting
 
 ### Rancher não inicia
 

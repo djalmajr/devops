@@ -9,7 +9,7 @@ Coleção de scripts e configurações para automação de infraestrutura usando
 **Object Storage S3-Compatible**
 
 - **Docker**: Instalação rápida para desenvolvimento
-- **Terraform**: Produção simples com infraestrutura como código
+- **Terraform**: Produção com infraestrutura como código
 
 ### 🐄 [Rancher](./rancher/)
 
@@ -66,7 +66,7 @@ cd rancher/
 cd docker/
 ./install.sh
 
-# Produção Simples
+# Produção
 cd terraform/
 ./install.sh
 ```
@@ -167,24 +167,20 @@ devops/
 │   ├── setup-ssh-keys.sh    # Configuração SSH
 │   └── test-connection.sh    # Teste de conectividade
 ├── minio/                    # Object Storage
-│   ├── README.md            # Documentação específica
+│   ├── README.md            # Documentação completa (Docker + Terraform)
 │   ├── docker/              # Deploy via Docker
-│   │   ├── README.md        # Documentação Docker
 │   │   ├── docker-compose.yml
 │   │   └── install.sh
 │   └── terraform/           # Deploy via Terraform
-│       ├── README.md        # Documentação Terraform
 │       ├── main.tf
 │       ├── install.sh
 │       └── terraform.tfvars.example
 └── rancher/                  # Kubernetes Management
-    ├── README.md            # Documentação específica
+    ├── README.md            # Documentação completa (Docker + Terraform)
     ├── docker/              # Deploy via Docker
-    │   ├── README.md        # Documentação Docker
     │   ├── docker-compose.yml
     │   └── install.sh
     └── terraform/           # Deploy via Terraform
-        ├── README.md        # Documentação Terraform
         ├── main.tf
         ├── install.sh
         └── terraform.tfvars.example
@@ -217,7 +213,7 @@ cd minio/terraform/  # ou rancher/terraform/
 ./install.sh
 ```
 
-**Ideal para**: Produção simples, infraestrutura versionada, deploy/destroy frequente
+**Ideal para**: Produção, infraestrutura versionada, deploy/destroy frequente
 
 ## 🔗 Links Úteis
 
