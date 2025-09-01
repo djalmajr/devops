@@ -104,7 +104,6 @@ resource "null_resource" "install_docker" {
       "  sudo usermod -aG docker ${var.ssh_user}",
       "  echo 'Docker instalado com sucesso'",
       "fi",
-      "",
       "# Verificar se Docker Compose já está instalado",
       "if command -v docker-compose >/dev/null 2>&1 || docker compose version >/dev/null 2>&1; then",
       "  echo 'Docker Compose já está instalado'",
@@ -115,7 +114,17 @@ resource "null_resource" "install_docker" {
       "  sudo chmod +x /usr/local/bin/docker-compose",
       "  echo 'Docker Compose instalado com sucesso'",
       "fi",
-      "",
+      "# Verificar se o docker-compose está acessível",
+      "if [ -x /usr/local/bin/docker-compose ]; then",
+      "  echo 'Docker Compose encontrado em /usr/local/bin/docker-compose'",
+      "  /usr/local/bin/docker-compose --version",
+      "elif docker compose version >/dev/null 2>&1; then",
+      "  echo 'Docker Compose v2 encontrado como plugin do Docker'",
+      "  docker compose version",
+      "else",
+      "  echo 'Erro: Docker Compose não foi instalado corretamente'",
+      "  exit 1",
+      "fi"
     ]
   }
 
@@ -191,9 +200,19 @@ resource "null_resource" "install_rancher" {
   provisioner "remote-exec" {
     inline = [
       "cd /opt/rancher",
-      "docker-compose down || true",
-      "docker-compose pull",
-      "docker-compose up -d",
+      "# Detectar qual comando docker-compose usar",
+      "if [ -x /usr/local/bin/docker-compose ]; then",
+      "  DOCKER_COMPOSE_CMD='/usr/local/bin/docker-compose'",
+      "elif docker compose version >/dev/null 2>&1; then",
+      "  DOCKER_COMPOSE_CMD='docker compose'",
+      "else",
+      "  echo 'Erro: Docker Compose não encontrado'",
+      "  exit 1",
+      "fi",
+      "echo 'Usando comando: $DOCKER_COMPOSE_CMD'",
+      "$DOCKER_COMPOSE_CMD down || true",
+      "$DOCKER_COMPOSE_CMD pull",
+      "$DOCKER_COMPOSE_CMD up -d",
       "echo 'Aguardando Rancher inicializar...'",
       "sleep 60",
       "docker ps"
@@ -254,9 +273,9 @@ output "useful_commands" {
   description = "Comandos úteis para gerenciar o Rancher"
   value = {
     ssh_connect = "ssh ${var.ssh_user}@${var.vm_host}"
-    view_logs   = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && docker-compose logs -f'"
-    restart     = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && docker-compose restart'"
-    stop        = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && docker-compose down'"
-    status      = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && docker-compose ps'"
+    view_logs   = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && (docker compose logs -f 2>/dev/null || /usr/local/bin/docker-compose logs -f)'"
+    restart     = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && (docker compose restart 2>/dev/null || /usr/local/bin/docker-compose restart)'"
+    stop        = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && (docker compose down 2>/dev/null || /usr/local/bin/docker-compose down)'"
+    status      = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/rancher && (docker compose ps 2>/dev/null || /usr/local/bin/docker-compose ps)'"
   }
 }
