@@ -1,0 +1,42 @@
+# MinIO Terraform Variables
+# Copie este arquivo para terraform.tfvars e ajuste os valores
+
+# === CONECTIVIDADE ===
+# IP da VM de destino (OBRIGATÓRIO)
+vm_host = "minio.home"
+
+# Usuário SSH (padrão: ubuntu)
+ssh_user = "ubuntu"
+
+# Caminho para chave privada SSH (padrão: ~/.ssh/id_rsa)
+ssh_private_key_path = "~/.ssh/id_rsa"
+
+# === CONFIGURAÇÃO MINIO ===
+# Versão do MinIO (padrão: latest)
+minio_version = "latest"
+
+# Hostname do MinIO (usado para URLs)
+minio_hostname = "minio.local"
+
+# Credenciais do administrador
+minio_root_user = "admin"
+minio_root_password = "password123"
+
+# Portas de acesso
+minio_api_port = "9000"      # API MinIO
+minio_console_port = "9001"  # Console Web
+
+# Versão do cliente MinIO (padrão: latest)
+minio_client_version = "latest"
+
+# === MAPEAMENTO DE VARIÁVEIS ===
+# Este arquivo mapeia para as seguintes variáveis do .env:
+# vm_host               -> VM_HOST
+# ssh_user              -> SSH_USER
+# minio_version         -> MINIO_VERSION
+# minio_hostname        -> MINIO_HOSTNAME
+# minio_root_user       -> MINIO_ROOT_USER
+# minio_root_password   -> MINIO_ROOT_PASSWORD
+# minio_api_port        -> MINIO_API_PORT
+# minio_console_port    -> MINIO_CONSOLE_PORT
+# minio_client_version  -> MINIO_CLIENT_VERSION

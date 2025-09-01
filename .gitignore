@@ -1,0 +1,8 @@
+# terraform artifacts
+.terraform*
+terraform.tfvars
+terraform.tfstate*
+tfplan
+
+# environment variables
+.env

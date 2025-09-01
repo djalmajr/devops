@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  rancher:
+    image: rancher/rancher:latest
+    container_name: rancher
+    hostname: rancher
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - rancher-data:/var/lib/rancher
+      - /var/log/rancher/auditlog:/var/log/auditlog
+    environment:
+      - CATTLE_BOOTSTRAP_PASSWORD=admin123
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - rancher-network
+
+volumes:
+  rancher-data:
+    driver: local
+
+networks:
+  rancher-network:
+    driver: bridge

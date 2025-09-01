@@ -1,0 +1,20 @@
+# Exemplo de arquivo de variáveis para Terraform
+# Copie este arquivo para terraform.tfvars e ajuste os valores
+
+# Hostname da VM onde o Rancher será instalado
+vm_host = "rancher.home"
+
+# Usuário SSH para conectar na VM
+ssh_user = "ubuntu"
+
+# Caminho para a chave SSH privada
+ssh_private_key_path = "~/.ssh/id_rsa"
+
+# Versão do Rancher (latest, v2.7.0, etc.)
+rancher_version = "latest"
+
+# Hostname do Rancher
+rancher_hostname = "rancher.home"
+
+# Senha inicial do Rancher (ALTERE ESTA SENHA!)
+bootstrap_password = "admin123"

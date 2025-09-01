@@ -1,0 +1,16 @@
+$TTL    604800
+@       IN      SOA     ns.home. root.home. (
+                              4         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns.home.
+
+; Ponteiros para a resolução reversa.
+; Use o último número do IP.
+24      IN      PTR     ns.home.
+100     IN      PTR     rancher.home.
+101     IN      PTR     minio.home.
+102     IN      PTR     gitlab.home.
