@@ -110,14 +110,14 @@ resource "null_resource" "ssh_test" {
 resource "null_resource" "install_docker" {
   depends_on = [null_resource.ssh_test]
 
-  provisioner "remote-exec" {
-    connection {
-      type        = local.ssh_connection.type
-      user        = local.ssh_connection.user
-      private_key = local.ssh_connection.private_key
-      host        = local.ssh_connection.host
-    }
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
 
+  provisioner "remote-exec" {
     inline = [
       "# Verificar se Docker já está instalado",
       "if command -v docker >/dev/null 2>&1; then",
@@ -126,10 +126,9 @@ resource "null_resource" "install_docker" {
       "else",
       "  echo 'Instalando Docker usando script oficial do Rancher...'",
       "  curl https://releases.rancher.com/install-docker/28.1.sh | sh",
-      "  sudo usermod -aG docker $USER",
+      "  sudo usermod -aG docker ${var.ssh_user}",
       "  echo 'Docker instalado com sucesso'",
       "fi",
-      "",
       "# Verificar se Docker Compose já está instalado",
       "if command -v docker-compose >/dev/null 2>&1 || docker compose version >/dev/null 2>&1; then",
       "  echo 'Docker Compose já está instalado'",
@@ -139,6 +138,17 @@ resource "null_resource" "install_docker" {
       "  sudo curl -L \"https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
       "  sudo chmod +x /usr/local/bin/docker-compose",
       "  echo 'Docker Compose instalado com sucesso'",
+      "fi",
+      "# Verificar se o docker-compose está acessível",
+      "if [ -x /usr/local/bin/docker-compose ]; then",
+      "  echo 'Docker Compose encontrado em /usr/local/bin/docker-compose'",
+      "  /usr/local/bin/docker-compose --version",
+      "elif docker compose version >/dev/null 2>&1; then",
+      "  echo 'Docker Compose v2 encontrado como plugin do Docker'",
+      "  docker compose version",
+      "else",
+      "  echo 'Erro: Docker Compose não foi instalado corretamente'",
+      "  exit 1",
       "fi"
     ]
   }
@@ -152,23 +162,29 @@ resource "null_resource" "install_docker" {
 resource "null_resource" "setup_minio" {
   depends_on = [null_resource.install_docker]
 
-  provisioner "remote-exec" {
-    connection {
-      type        = local.ssh_connection.type
-      user        = local.ssh_connection.user
-      private_key = local.ssh_connection.private_key
-      host        = local.ssh_connection.host
-    }
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
 
+  provisioner "remote-exec" {
     inline = [
-      "# Criar diretório para MinIO",
       "sudo mkdir -p /opt/minio",
-      "sudo chown $USER:$USER /opt/minio",
-      "",
-      "# Parar containers existentes",
+      "sudo chown ${var.ssh_user}:${var.ssh_user} /opt/minio",
       "cd /opt/minio",
       "if [ -f docker-compose.yml ]; then",
-      "  docker-compose down 2>/dev/null || true",
+      "  # Detectar qual comando docker-compose usar",
+      "  if [ -x /usr/local/bin/docker-compose ]; then",
+      "    DOCKER_COMPOSE_CMD='/usr/local/bin/docker-compose'",
+      "  elif docker compose version >/dev/null 2>&1; then",
+      "    DOCKER_COMPOSE_CMD='docker compose'",
+      "  else",
+      "    echo 'Erro: Docker Compose não encontrado'",
+      "    exit 1",
+      "  fi",
+      "  $DOCKER_COMPOSE_CMD down 2>/dev/null || true",
       "fi"
     ]
   }
@@ -182,13 +198,14 @@ resource "null_resource" "setup_minio" {
 resource "null_resource" "copy_docker_compose" {
   depends_on = [null_resource.setup_minio]
 
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
+
   provisioner "file" {
-    connection {
-      type        = local.ssh_connection.type
-      user        = local.ssh_connection.user
-      private_key = local.ssh_connection.private_key
-      host        = local.ssh_connection.host
-    }
 
     content = templatefile("${path.module}/docker-compose.yml.tpl", {
       minio_version        = var.minio_version
@@ -211,14 +228,14 @@ resource "null_resource" "copy_docker_compose" {
 resource "null_resource" "create_env_file" {
   depends_on = [null_resource.copy_docker_compose]
 
-  provisioner "remote-exec" {
-    connection {
-      type        = local.ssh_connection.type
-      user        = local.ssh_connection.user
-      private_key = local.ssh_connection.private_key
-      host        = local.ssh_connection.host
-    }
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
 
+  provisioner "remote-exec" {
     inline = [
       "cd /opt/minio",
       "cat > .env << EOF",
@@ -242,27 +259,34 @@ resource "null_resource" "create_env_file" {
 resource "null_resource" "start_minio" {
   depends_on = [null_resource.create_env_file]
 
-  provisioner "remote-exec" {
-    connection {
-      type        = local.ssh_connection.type
-      user        = local.ssh_connection.user
-      private_key = local.ssh_connection.private_key
-      host        = local.ssh_connection.host
-    }
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
 
+  provisioner "remote-exec" {
     inline = [
       "cd /opt/minio",
+      "# Detectar qual comando docker-compose usar",
+      "if [ -x /usr/local/bin/docker-compose ]; then",
+      "  DOCKER_COMPOSE_CMD='/usr/local/bin/docker-compose'",
+      "elif docker compose version >/dev/null 2>&1; then",
+      "  DOCKER_COMPOSE_CMD='docker compose'",
+      "else",
+      "  echo 'Erro: Docker Compose não encontrado'",
+      "  exit 1",
+      "fi",
+      "echo 'Usando comando: $DOCKER_COMPOSE_CMD'",
       "echo 'Iniciando MinIO...'",
-      "docker-compose up -d",
-      "",
+      "$DOCKER_COMPOSE_CMD up -d",
       "echo 'Aguardando MinIO estar pronto...'",
       "sleep 30",
-      "",
       "echo 'Verificando status...'",
-      "docker-compose ps",
-      "",
+      "$DOCKER_COMPOSE_CMD ps",
       "echo 'Logs da configuração inicial:'",
-      "docker-compose logs minio-client || true"
+      "$DOCKER_COMPOSE_CMD logs minio-client || true"
     ]
   }
 
@@ -275,16 +299,25 @@ resource "null_resource" "start_minio" {
 resource "null_resource" "verify_minio" {
   depends_on = [null_resource.start_minio]
 
-  provisioner "remote-exec" {
-    connection {
-      type        = local.ssh_connection.type
-      user        = local.ssh_connection.user
-      private_key = local.ssh_connection.private_key
-      host        = local.ssh_connection.host
-    }
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
 
+  provisioner "remote-exec" {
     inline = [
       "cd /opt/minio",
+      "# Detectar qual comando docker-compose usar",
+      "if [ -x /usr/local/bin/docker-compose ]; then",
+      "  DOCKER_COMPOSE_CMD='/usr/local/bin/docker-compose'",
+      "elif docker compose version >/dev/null 2>&1; then",
+      "  DOCKER_COMPOSE_CMD='docker compose'",
+      "else",
+      "  echo 'Erro: Docker Compose não encontrado'",
+      "  exit 1",
+      "fi",
       "echo 'Verificando saúde do MinIO...'",
       "for i in {1..10}; do",
       "  if curl -f http://localhost:${var.minio_api_port}/minio/health/live >/dev/null 2>&1; then",
@@ -295,9 +328,8 @@ resource "null_resource" "verify_minio" {
       "    sleep 10",
       "  fi",
       "done",
-      "",
       "echo 'Status final dos containers:'",
-      "docker-compose ps"
+      "$DOCKER_COMPOSE_CMD ps"
     ]
   }
 
@@ -330,9 +362,9 @@ output "useful_commands" {
   description = "Comandos úteis para gerenciar o MinIO"
   value = {
     ssh_connect = "ssh ${var.ssh_user}@${var.vm_host}"
-    view_logs   = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && docker-compose logs -f'"
-    restart     = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && docker-compose restart'"
-    stop        = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && docker-compose down'"
-    status      = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && docker-compose ps'"
+    view_logs   = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose logs -f 2>/dev/null || /usr/local/bin/docker-compose logs -f)'"
+    restart     = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose restart 2>/dev/null || /usr/local/bin/docker-compose restart)'"
+    stop        = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose down 2>/dev/null || /usr/local/bin/docker-compose down)'"
+    status      = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose ps 2>/dev/null || /usr/local/bin/docker-compose ps)'"
   }
 }

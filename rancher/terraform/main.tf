@@ -85,6 +85,7 @@ resource "null_resource" "ssh_test" {
 # Instalar Docker
 resource "null_resource" "install_docker" {
   depends_on = [null_resource.ssh_test]
+
   connection {
     type        = local.ssh_connection.type
     user        = local.ssh_connection.user
@@ -133,8 +134,6 @@ resource "null_resource" "install_docker" {
   }
 }
 
-
-
 # Criar diretório e arquivos de configuração
 resource "null_resource" "create_directories" {
   depends_on = [null_resource.install_docker]
@@ -161,8 +160,8 @@ resource "null_resource" "create_directories" {
   }
 }
 
-# Criar docker-compose.yml
-resource "null_resource" "create_docker_compose" {
+# Copiar docker-compose.yml
+resource "null_resource" "copy_docker_compose" {
   depends_on = [null_resource.create_directories]
 
   connection {
@@ -188,7 +187,7 @@ resource "null_resource" "create_docker_compose" {
 
 # Iniciar Rancher
 resource "null_resource" "install_rancher" {
-  depends_on = [null_resource.create_docker_compose]
+  depends_on = [null_resource.copy_docker_compose]
 
   connection {
     type        = local.ssh_connection.type
