@@ -20,7 +20,7 @@ minio_hostname = "minio.local"
 
 # Credenciais do administrador
 minio_root_user = "admin"
-minio_root_password = "password123"
+minio_root_password = "MySecP4ss!"
 
 # Portas de acesso
 minio_api_port = "9000"      # API MinIO

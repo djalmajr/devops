@@ -51,7 +51,7 @@ variable "minio_root_user" {
 variable "minio_root_password" {
   description = "Senha root do MinIO"
   type        = string
-  default     = "password123"
+  default     = "MySecP4ss!"
   sensitive   = true
 }
 

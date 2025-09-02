@@ -17,7 +17,7 @@ SSH_USER="${SSH_USER:-ubuntu}"
 SSH_PASS="${SSH_PASS:-}"
 RANCHER_VERSION="${RANCHER_VERSION:-latest}"
 RANCHER_HOSTNAME="${RANCHER_HOSTNAME:-rancher.home}"
-BOOTSTRAP_PASSWORD="${BOOTSTRAP_PASSWORD:-admin123}"
+BOOTSTRAP_PASSWORD="${BOOTSTRAP_PASSWORD:-MySecP4ss!}"
 
 echo "🚀 Instalação automatizada do Rancher via Terraform"
 echo "==================================================="

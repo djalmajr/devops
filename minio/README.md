@@ -45,13 +45,13 @@ terraform apply -auto-approve
 - **Console Web**: http://$VM_HOST:9001
 - **API**: http://$VM_HOST:9000
 - **Usuário**: $MINIO_ROOT_USER (padrão: admin)
-- **Senha**: $MINIO_ROOT_PASSWORD (padrão: password123)
+- **Senha**: $MINIO_ROOT_PASSWORD (padrão: MySecP4ss!)
 
 ## ⚙️ Variáveis Específicas do MinIO
 
 - `MINIO_VERSION`: Versão do MinIO (padrão: latest)
 - `MINIO_ROOT_USER`: Usuário admin (padrão: admin)
-- `MINIO_ROOT_PASSWORD`: Senha admin (padrão: password123)
+- `MINIO_ROOT_PASSWORD`: Senha admin (padrão: MySecP4ss!)
 - `MINIO_CONSOLE_PORT`: Porta do console (padrão: 9001)
 - `MINIO_API_PORT`: Porta da API (padrão: 9000)
 
