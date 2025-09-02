@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   rancher:
     image: rancher/rancher:latest
@@ -12,7 +10,7 @@ services:
       - rancher-data:/var/lib/rancher
       - /var/log/rancher/auditlog:/var/log/auditlog
     environment:
-      - CATTLE_BOOTSTRAP_PASSWORD=admin123
+      - CATTLE_BOOTSTRAP_PASSWORD=MySecP4ss!
     restart: unless-stopped
     privileged: true
     networks:

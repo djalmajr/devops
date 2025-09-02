@@ -133,8 +133,6 @@ echo "🎉 Instalação concluída!"
 echo "📋 Informações de acesso:"
 terraform output
 echo ""
-echo "⚠️  IMPORTANTE: Altere a senha padrão no primeiro acesso!"
-echo ""
 echo "📊 Comandos úteis:"
 echo "   - Status: terraform show"
 echo "   - Logs: ssh $SSH_USER@$VM_HOST 'docker logs rancher'"

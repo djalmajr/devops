@@ -16,5 +16,5 @@ rancher_version = "latest"
 # Hostname do Rancher
 rancher_hostname = "rancher.home"
 
-# Senha inicial do Rancher (ALTERE ESTA SENHA!)
-bootstrap_password = "admin123"
+# Senha inicial do Rancher
+bootstrap_password = "MySecP4ss!"

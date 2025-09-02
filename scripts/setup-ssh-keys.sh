@@ -71,7 +71,6 @@ if ssh -o ConnectTimeout=5 -o BatchMode=yes $SSH_USER@$VM_HOST exit 2>/dev/null;
     echo ""
     echo "🚀 Próximos passos:"
     echo "   ./scripts/test-connection.sh    # Testar conectividade"
-echo "   ./scripts/setup-env.sh          # Configurar variáveis"
 else
     echo "   ❌ Ainda é necessário senha"
     echo "   💡 Verifique a configuração manualmente:"

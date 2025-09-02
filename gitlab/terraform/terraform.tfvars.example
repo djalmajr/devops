@@ -1,0 +1,16 @@
+# GitLab Terraform Variables
+# Copie este arquivo para terraform.tfvars e ajuste os valores conforme necessário
+
+# Configurações da VM
+vm_host = "gitlab.home"
+ssh_user = "ubuntu"
+ssh_private_key_path = "~/.ssh/id_rsa"
+
+# Configurações do GitLab
+gitlab_version = "latest"
+gitlab_hostname = "gitlab.home"
+gitlab_root_password = "MySecP4ss!"
+gitlab_http_port = "80"
+gitlab_https_port = "443"
+gitlab_ssh_port = "2222"
+gitlab_timezone = "America/Sao_Paulo"

@@ -24,7 +24,7 @@ else
 fi
 
 # Verificar se Docker Compose está instalado
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
     echo "❌ Docker Compose não encontrado. Instalando..."
     sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
@@ -52,9 +52,7 @@ if docker-compose ps | grep -q "Up"; then
     echo "📋 Informações de acesso:"
     echo "   URL: https://rancher.home"
     echo "   Usuário: admin"
-    echo "   Senha inicial: admin123"
-    echo ""
-    echo "⚠️  IMPORTANTE: Altere a senha padrão no primeiro acesso!"
+    echo "   Senha inicial: MySecP4ss!"
     echo ""
     echo "📊 Para verificar logs: docker-compose logs -f rancher"
     echo "🛑 Para parar: docker-compose down"

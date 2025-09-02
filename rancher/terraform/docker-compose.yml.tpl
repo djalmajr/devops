@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   rancher:
     image: rancher/rancher:${rancher_version}

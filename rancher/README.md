@@ -44,13 +44,13 @@ terraform apply -auto-approve
 
 - **URL**: http://$VM_HOST
 - **Usuário**: admin
-- **Senha**: $BOOTSTRAP_PASSWORD (padrão: admin123)
+- **Senha**: $BOOTSTRAP_PASSWORD (padrão: MySecP4ss!)
 
 ## ⚙️ Variáveis Específicas do Rancher
 
 - `RANCHER_VERSION`: Versão do Rancher (padrão: latest)
 - `RANCHER_HOSTNAME`: Hostname do Rancher (padrão: rancher.home)
-- `BOOTSTRAP_PASSWORD`: Senha inicial do admin (padrão: admin123)
+- `BOOTSTRAP_PASSWORD`: Senha inicial do admin (padrão: MySecP4ss!)
 
 ## 📋 O que Cada Método Instala
 

@@ -1,0 +1,80 @@
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:${GITLAB_VERSION:-latest}
+    container_name: gitlab
+    hostname: ${GITLAB_HOSTNAME:-gitlab.home}
+    restart: unless-stopped
+    ports:
+      - "${GITLAB_HTTP_PORT:-80}:80"
+      - "${GITLAB_HTTPS_PORT:-443}:443"
+      - "${GITLAB_SSH_PORT:-2222}:22"
+    volumes:
+      - gitlab_config:/etc/gitlab
+      - gitlab_logs:/var/log/gitlab
+      - gitlab_data:/var/opt/gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://${GITLAB_HOSTNAME:-gitlab.home}'
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_PORT:-2222}
+        gitlab_rails['initial_root_password'] = '${GITLAB_ROOT_PASSWORD:-MySecP4ss!}'
+        gitlab_rails['time_zone'] = '${GITLAB_TIMEZONE:-America/Sao_Paulo}'
+        gitlab_rails['gitlab_email_enabled'] = false
+        gitlab_rails['gitlab_default_theme'] = 2
+        gitlab_rails['gitlab_default_projects_features_issues'] = true
+        gitlab_rails['gitlab_default_projects_features_merge_requests'] = true
+        gitlab_rails['gitlab_default_projects_features_wiki'] = true
+        gitlab_rails['gitlab_default_projects_features_snippets'] = true
+        gitlab_rails['gitlab_default_projects_features_builds'] = true
+        gitlab_rails['gitlab_default_projects_features_container_registry'] = true
+        postgresql['shared_buffers'] = "256MB"
+        postgresql['max_connections'] = 200
+        redis['maxmemory'] = "256m"
+        redis['maxmemory_policy'] = "allkeys-lru"
+        sidekiq['max_concurrency'] = 25
+        unicorn['worker_processes'] = 2
+        unicorn['worker_memory_limit_mb'] = 1024
+        nginx['worker_processes'] = 2
+        nginx['worker_connections'] = 1024
+        prometheus_monitoring['enable'] = false
+        alertmanager['enable'] = false
+        node_exporter['enable'] = false
+        redis_exporter['enable'] = false
+        postgres_exporter['enable'] = false
+        gitlab_exporter['enable'] = false
+        gitlab_rails['prometheus_metrics_enabled'] = false
+    networks:
+      - gitlab_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/opt/gitlab/bin/gitlab-healthcheck",
+          "--fail",
+          "--max-time",
+          "10",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    shm_size: 256m
+
+volumes:
+  gitlab_config:
+    driver: local
+  gitlab_logs:
+    driver: local
+  gitlab_data:
+    driver: local
+
+networks:
+  gitlab_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16

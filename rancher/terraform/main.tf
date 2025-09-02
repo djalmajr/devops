@@ -45,7 +45,7 @@ variable "rancher_hostname" {
 variable "bootstrap_password" {
   description = "Senha inicial do Rancher"
   type        = string
-  default     = "admin123"
+  default     = "MySecP4ss!"
   sensitive   = true
 }
 
@@ -61,14 +61,14 @@ locals {
 
 # Verificar conectividade SSH
 resource "null_resource" "ssh_test" {
-  provisioner "remote-exec" {
-    connection {
-      type        = local.ssh_connection.type
-      user        = local.ssh_connection.user
-      private_key = local.ssh_connection.private_key
-      host        = local.ssh_connection.host
-    }
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
 
+  provisioner "remote-exec" {
     inline = [
       "echo 'SSH connection successful'",
       "echo 'OS: '$(lsb_release -d 2>/dev/null || cat /etc/os-release | grep PRETTY_NAME)",

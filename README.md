@@ -30,7 +30,6 @@ Coleção de scripts e configurações para automação de infraestrutura usando
 
 **Utilitários de Automação**
 
-- `setup-env.sh`: Configuração inicial do ambiente
 - `setup-ssh-keys.sh`: Configuração de chaves SSH
 - `test-connection.sh`: Teste de conectividade
 
@@ -39,9 +38,6 @@ Coleção de scripts e configurações para automação de infraestrutura usando
 ### 1. Configurar Ambiente
 
 ```bash
-# Configurar ambiente inicial
-./scripts/setup-env.sh
-
 # Configurar chaves SSH
 ./scripts/setup-ssh-keys.sh
 
@@ -163,7 +159,6 @@ devops/
 │   ├── config/              # Configurações BIND9
 │   └── docker-compose.yml   # Deploy via Docker
 ├── scripts/                  # Utilitários gerais
-│   ├── setup-env.sh         # Configuração inicial
 │   ├── setup-ssh-keys.sh    # Configuração SSH
 │   └── test-connection.sh    # Teste de conectividade
 ├── minio/                    # Object Storage

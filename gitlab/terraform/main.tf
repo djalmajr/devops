@@ -1,5 +1,5 @@
-# MinIO Terraform Configuration
-# Instala e configura MinIO em uma VM remota via SSH
+# GitLab Terraform Configuration
+# Instala e configura GitLab em uma VM remota via SSH
 
 terraform {
   required_version = ">= 1.0"
@@ -13,9 +13,9 @@ terraform {
 
 # Variáveis de entrada
 variable "vm_host" {
-  description = "Hostname da VM onde o MinIO será instalado"
+  description = "Hostname da VM onde o GitLab será instalado"
   type        = string
-  default     = "minio.home"
+  default     = "gitlab.home"
 }
 
 variable "ssh_user" {
@@ -30,47 +30,47 @@ variable "ssh_private_key_path" {
   default     = "~/.ssh/id_rsa"
 }
 
-variable "minio_version" {
-  description = "Versão do MinIO"
+variable "gitlab_version" {
+  description = "Versão do GitLab"
   type        = string
   default     = "latest"
 }
 
-variable "minio_hostname" {
-  description = "Hostname do MinIO"
+variable "gitlab_hostname" {
+  description = "Hostname do GitLab"
   type        = string
-  default     = "minio.local"
+  default     = "gitlab.home"
 }
 
-variable "minio_root_user" {
-  description = "Usuário root do MinIO"
+variable "gitlab_root_password" {
+  description = "Senha root do GitLab"
   type        = string
-  default     = "admin"
-}
-
-variable "minio_root_password" {
-  description = "Senha root do MinIO"
-  type        = string
-  default     = "password123"
+  default     = "MySecP4ss!"
   sensitive   = true
 }
 
-variable "minio_api_port" {
-  description = "Porta da API MinIO"
+variable "gitlab_http_port" {
+  description = "Porta HTTP do GitLab"
   type        = string
-  default     = "9000"
+  default     = "80"
 }
 
-variable "minio_console_port" {
-  description = "Porta do console MinIO"
+variable "gitlab_https_port" {
+  description = "Porta HTTPS do GitLab"
   type        = string
-  default     = "9001"
+  default     = "443"
 }
 
-variable "minio_client_version" {
-  description = "Versão do cliente MinIO"
+variable "gitlab_ssh_port" {
+  description = "Porta SSH do GitLab"
   type        = string
-  default     = "latest"
+  default     = "22"
+}
+
+variable "gitlab_timezone" {
+  description = "Timezone do GitLab"
+  type        = string
+  default     = "America/Sao_Paulo"
 }
 
 # Conexão SSH
@@ -106,9 +106,41 @@ resource "null_resource" "ssh_test" {
   }
 }
 
+# Verificar recursos do sistema
+resource "null_resource" "check_system_resources" {
+  depends_on = [null_resource.ssh_test]
+
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "echo 'Verificando recursos do sistema...'",
+      "TOTAL_MEM=$(free -m | awk 'NR==2{printf \"%.0f\", $2}')",
+      "TOTAL_DISK=$(df -BG . | awk 'NR==2{print $4}' | sed 's/G//')",
+      "echo 'Memória total: '$${TOTAL_MEM}MB",
+      "echo 'Espaço em disco disponível: '$${TOTAL_DISK}GB",
+      "if [ \"$$TOTAL_MEM\" -lt 4096 ]; then",
+      "  echo 'AVISO: GitLab recomenda pelo menos 4GB de RAM. Atual: '$${TOTAL_MEM}MB",
+      "fi",
+      "if [ \"$$TOTAL_DISK\" -lt 10 ]; then",
+      "  echo 'AVISO: GitLab recomenda pelo menos 10GB de espaço em disco. Atual: '$${TOTAL_DISK}GB",
+      "fi"
+    ]
+  }
+
+  triggers = {
+    always_run = timestamp()
+  }
+}
+
 # Instalar Docker
 resource "null_resource" "install_docker" {
-  depends_on = [null_resource.ssh_test]
+  depends_on = [null_resource.check_system_resources]
 
   connection {
     type        = local.ssh_connection.type
@@ -158,8 +190,8 @@ resource "null_resource" "install_docker" {
   }
 }
 
-# Criar diretório e arquivos de configuração
-resource "null_resource" "setup_minio" {
+# Configurar limites do sistema
+resource "null_resource" "configure_system_limits" {
   depends_on = [null_resource.install_docker]
 
   connection {
@@ -171,9 +203,34 @@ resource "null_resource" "setup_minio" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p /opt/minio",
-      "sudo chown ${var.ssh_user}:${var.ssh_user} /opt/minio",
-      "cd /opt/minio",
+      "echo 'Configurando limites do sistema para GitLab...'",
+      "sudo sysctl -w vm.max_map_count=262144",
+      "echo 'vm.max_map_count=262144' | sudo tee -a /etc/sysctl.conf",
+      "echo 'Limites do sistema configurados'"
+    ]
+  }
+
+  triggers = {
+    always_run = timestamp()
+  }
+}
+
+# Criar diretório e arquivos de configuração
+resource "null_resource" "setup_gitlab" {
+  depends_on = [null_resource.configure_system_limits]
+
+  connection {
+    type        = local.ssh_connection.type
+    user        = local.ssh_connection.user
+    private_key = local.ssh_connection.private_key
+    host        = local.ssh_connection.host
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir -p /opt/gitlab",
+      "sudo chown ${var.ssh_user}:${var.ssh_user} /opt/gitlab",
+      "cd /opt/gitlab",
       "if [ -f docker-compose.yml ]; then",
       "  # Detectar qual comando docker-compose usar",
       "  if [ -x /usr/local/bin/docker-compose ]; then",
@@ -196,7 +253,7 @@ resource "null_resource" "setup_minio" {
 
 # Copiar docker-compose.yml
 resource "null_resource" "copy_docker_compose" {
-  depends_on = [null_resource.setup_minio]
+  depends_on = [null_resource.setup_gitlab]
 
   connection {
     type        = local.ssh_connection.type
@@ -206,17 +263,16 @@ resource "null_resource" "copy_docker_compose" {
   }
 
   provisioner "file" {
-
     content = templatefile("${path.module}/docker-compose.yml.tpl", {
-      minio_version        = var.minio_version
-      minio_hostname       = var.minio_hostname
-      minio_root_user      = var.minio_root_user
-      minio_root_password  = var.minio_root_password
-      minio_api_port       = var.minio_api_port
-      minio_console_port   = var.minio_console_port
-      minio_client_version = var.minio_client_version
+      gitlab_version       = var.gitlab_version
+      gitlab_hostname      = var.gitlab_hostname
+      gitlab_root_password = var.gitlab_root_password
+      gitlab_http_port     = var.gitlab_http_port
+      gitlab_https_port    = var.gitlab_https_port
+      gitlab_ssh_port      = var.gitlab_ssh_port
+      gitlab_timezone      = var.gitlab_timezone
     })
-    destination = "/opt/minio/docker-compose.yml"
+    destination = "/opt/gitlab/docker-compose.yml"
   }
 
   triggers = {
@@ -237,15 +293,15 @@ resource "null_resource" "create_env_file" {
 
   provisioner "remote-exec" {
     inline = [
-      "cd /opt/minio",
+      "cd /opt/gitlab",
       "cat > .env << EOF",
-      "MINIO_VERSION=${var.minio_version}",
-      "MINIO_HOSTNAME=${var.minio_hostname}",
-      "MINIO_ROOT_USER=${var.minio_root_user}",
-      "MINIO_ROOT_PASSWORD=${var.minio_root_password}",
-      "MINIO_API_PORT=${var.minio_api_port}",
-      "MINIO_CONSOLE_PORT=${var.minio_console_port}",
-      "MINIO_CLIENT_VERSION=${var.minio_client_version}",
+      "GITLAB_VERSION=${var.gitlab_version}",
+      "GITLAB_HOSTNAME=${var.gitlab_hostname}",
+      "GITLAB_ROOT_PASSWORD=${var.gitlab_root_password}",
+      "GITLAB_HTTP_PORT=${var.gitlab_http_port}",
+      "GITLAB_HTTPS_PORT=${var.gitlab_https_port}",
+      "GITLAB_SSH_PORT=${var.gitlab_ssh_port}",
+      "GITLAB_TIMEZONE=${var.gitlab_timezone}",
       "EOF"
     ]
   }
@@ -255,8 +311,8 @@ resource "null_resource" "create_env_file" {
   }
 }
 
-# Iniciar MinIO
-resource "null_resource" "start_minio" {
+# Iniciar GitLab
+resource "null_resource" "start_gitlab" {
   depends_on = [null_resource.create_env_file]
 
   connection {
@@ -268,7 +324,7 @@ resource "null_resource" "start_minio" {
 
   provisioner "remote-exec" {
     inline = [
-      "cd /opt/minio",
+      "cd /opt/gitlab",
       "# Detectar qual comando docker-compose usar",
       "if [ -x /usr/local/bin/docker-compose ]; then",
       "  DOCKER_COMPOSE_CMD='/usr/local/bin/docker-compose'",
@@ -279,14 +335,22 @@ resource "null_resource" "start_minio" {
       "  exit 1",
       "fi",
       "echo 'Usando comando: $DOCKER_COMPOSE_CMD'",
-      "echo 'Iniciando MinIO...'",
-      "$DOCKER_COMPOSE_CMD up -d",
-      "echo 'Aguardando MinIO estar pronto...'",
+      "echo 'Iniciando GitLab...'",
+      "# Verificar se usuário tem acesso ao Docker, senão usar sudo",
+      "if docker ps >/dev/null 2>&1; then",
+      "  $DOCKER_COMPOSE_CMD up -d",
+      "else",
+      "  echo 'Usando sudo para executar Docker...'",
+      "  sudo $DOCKER_COMPOSE_CMD up -d",
+      "fi",
+      "echo 'Aguardando GitLab inicializar (pode levar 5-10 minutos)...'",
       "sleep 30",
       "echo 'Verificando status...'",
-      "$DOCKER_COMPOSE_CMD ps",
-      "echo 'Logs da configuração inicial:'",
-      "$DOCKER_COMPOSE_CMD logs minio-client || true"
+      "if docker ps >/dev/null 2>&1; then",
+      "  $DOCKER_COMPOSE_CMD ps",
+      "else",
+      "  sudo $DOCKER_COMPOSE_CMD ps",
+      "fi"
     ]
   }
 
@@ -295,9 +359,9 @@ resource "null_resource" "start_minio" {
   }
 }
 
-# Verificar se MinIO está funcionando
-resource "null_resource" "verify_minio" {
-  depends_on = [null_resource.start_minio]
+# Verificar se GitLab está funcionando
+resource "null_resource" "verify_gitlab" {
+  depends_on = [null_resource.start_gitlab]
 
   connection {
     type        = local.ssh_connection.type
@@ -308,7 +372,7 @@ resource "null_resource" "verify_minio" {
 
   provisioner "remote-exec" {
     inline = [
-      "cd /opt/minio",
+      "cd /opt/gitlab",
       "# Detectar qual comando docker-compose usar",
       "if [ -x /usr/local/bin/docker-compose ]; then",
       "  DOCKER_COMPOSE_CMD='/usr/local/bin/docker-compose'",
@@ -318,18 +382,22 @@ resource "null_resource" "verify_minio" {
       "  echo 'Erro: Docker Compose não encontrado'",
       "  exit 1",
       "fi",
-      "echo 'Verificando saúde do MinIO...'",
-      "for i in {1..10}; do",
-      "  if curl -f http://localhost:${var.minio_api_port}/minio/health/live >/dev/null 2>&1; then",
-      "    echo 'MinIO está saudável!'",
+      "echo 'Verificando saúde do GitLab...'",
+      "for i in {1..20}; do",
+      "  if curl -f -s http://localhost:${var.gitlab_http_port}/users/sign_in >/dev/null 2>&1; then",
+      "    echo 'GitLab está funcionando!'",
       "    break",
       "  else",
-      "    echo 'Tentativa $i/10: MinIO ainda não está pronto...'",
-      "    sleep 10",
+      "    echo 'Tentativa $i/20: GitLab ainda não está pronto...'",
+      "    sleep 30",
       "  fi",
       "done",
       "echo 'Status final dos containers:'",
-      "$DOCKER_COMPOSE_CMD ps"
+      "if docker ps >/dev/null 2>&1; then",
+      "  $DOCKER_COMPOSE_CMD ps",
+      "else",
+      "  sudo $DOCKER_COMPOSE_CMD ps",
+      "fi"
     ]
   }
 
@@ -339,32 +407,43 @@ resource "null_resource" "verify_minio" {
 }
 
 # Outputs
-output "minio_console_url" {
-  description = "URL do console web do MinIO"
-  value       = "http://${var.vm_host}:${var.minio_console_port}"
+output "gitlab_url" {
+  description = "URL do GitLab"
+  value       = "http://${var.vm_host}:${var.gitlab_http_port}"
 }
 
-output "minio_api_url" {
-  description = "URL da API do MinIO"
-  value       = "http://${var.vm_host}:${var.minio_api_port}"
+output "gitlab_https_url" {
+  description = "URL HTTPS do GitLab"
+  value       = "https://${var.vm_host}:${var.gitlab_https_port}"
 }
 
-output "minio_credentials" {
-  description = "Credenciais do MinIO"
+output "gitlab_ssh_url" {
+  description = "URL SSH do GitLab"
+  value       = "ssh://git@${var.vm_host}:${var.gitlab_ssh_port}"
+}
+
+output "gitlab_credentials" {
+  description = "Credenciais do GitLab"
   value = {
-    username = var.minio_root_user
-    password = var.minio_root_password
+    username = "root"
+    password = var.gitlab_root_password
   }
   sensitive = true
 }
 
+output "ssh_command" {
+  description = "Comando SSH para conectar na VM"
+  value       = "ssh ${var.ssh_user}@${var.vm_host}"
+}
+
 output "useful_commands" {
-  description = "Comandos úteis para gerenciar o MinIO"
+  description = "Comandos úteis para gerenciar o GitLab"
   value = {
-    ssh_connect = "ssh ${var.ssh_user}@${var.vm_host}"
-    view_logs   = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose logs -f 2>/dev/null || /usr/local/bin/docker-compose logs -f)'"
-    restart     = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose restart 2>/dev/null || /usr/local/bin/docker-compose restart)'"
-    stop        = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose down 2>/dev/null || /usr/local/bin/docker-compose down)'"
-    status      = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/minio && (docker compose ps 2>/dev/null || /usr/local/bin/docker-compose ps)'"
+    ssh_connect  = "ssh ${var.ssh_user}@${var.vm_host}"
+    view_logs    = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/gitlab && (docker compose logs -f 2>/dev/null || /usr/local/bin/docker-compose logs -f)'"
+    restart      = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/gitlab && (docker compose restart 2>/dev/null || /usr/local/bin/docker-compose restart)'"
+    stop         = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/gitlab && (docker compose down 2>/dev/null || /usr/local/bin/docker-compose down)'"
+    status       = "ssh ${var.ssh_user}@${var.vm_host} 'cd /opt/gitlab && (docker compose ps 2>/dev/null || /usr/local/bin/docker-compose ps)'"
+    health_check = "ssh ${var.ssh_user}@${var.vm_host} 'docker exec gitlab gitlab-rake gitlab:check SANITIZE=true'"
   }
 }
